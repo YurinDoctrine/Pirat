@@ -37,6 +37,9 @@ class Net:
     implementation of network auditor.
     """
 
+    srp_timeout = 5
+    sr1_timeout = 5
+
     os_ttl = {
         0x3c: 'macos',
         0x40: 'linux',
@@ -125,7 +128,7 @@ class Net:
         """
 
         pack = IP(dst=host) / ICMP()
-        response = sr1(pack, timeout=10, verbose=False)
+        response = sr1(pack, timeout=self.sr1_timeout, verbose=False)
 
         if response:
             if IP in response:
@@ -147,7 +150,7 @@ class Net:
         arp = ARP(pdst=gateway)
         ether = Ether(dst="ff:ff:ff:ff:ff:ff")
 
-        response = srp(ether / arp, timeout=10, verbose=False)[0]
+        response = srp(ether / arp, timeout=self.srp_timeout, verbose=False)[0]
 
         if response:
             hosts = {}
