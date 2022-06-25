@@ -76,26 +76,27 @@ class Net:
 
         return gateways
 
-    @staticmethod
-    def scan_ports(host: str, start: int = 0, end: int = 65535) -> dict:
+    def scan_ports(self, host: str, start: int = 0, end: int = 65535, tech: str = 'f') -> dict:
         """ Scan host for opened ports.
 
         :param str host: host to scan for opened ports
         :param int start: first port
         :param int end: final port
+        :param int tech: technique to use
         :return dict: dictionary of port and service name
         """
 
         ports = {}
+        ip = IP(dst=host)
 
         for port in range(start, end+1):
-            sock = socket.socket()
+            print(port)
+            pack = ip / TCP(sport=RandShort(), dport=port, flags=tech.upper())
+            result = sr1(pack, timeout=self.sr1_timeout)
 
-            sock.settimeout(0.5)
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
-            connected = sock.connect_ex((host, port)) == 0
-            sock.close()
+            if result.haslayer(TCP):
+                if result.getlayer(TCP).flags == 0x14:
+                    continue
 
             if connected:
                 try:
