@@ -37,7 +37,9 @@ setup(name='pirat',
       packages=find_packages(),
       include_package_data=True,
       install_requires=[
-          'scapy'
+          'scapy',
+          'mac_vendor_lookup',
+          'netifaces'
       ],
       zip_safe=False
       )
