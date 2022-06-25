@@ -159,7 +159,7 @@ class Net:
                 hosts.update({
                     recv.psrc: {
                         'mac': recv.hwsrc,
-                        'vendor': self.get_vendor(recv.psrc.hwsrc),
+                        'vendor': self.get_vendor(recv.hwsrc),
                         'platform': self.get_platform(recv.psrc),
                         'ports': self.scan_ports(recv.psrc),
                         'vulns': {}
