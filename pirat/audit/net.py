@@ -27,7 +27,7 @@ import netaddr
 import netifaces
 
 from scapy.all import *
-from max_vendor_lookup import MacLookup
+from mac_vendor_lookup import MacLookup
 
 
 class Net:
