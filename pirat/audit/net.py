@@ -156,21 +156,20 @@ class Net:
             hosts = {}
 
             for _, recv in response:
-                hosts.update({
-                    recv.psrc: {
-                        'mac': recv.hwsrc,
-                        'vendor': self.get_vendor(recv.hwsrc),
-                        'platform': self.get_platform(recv.psrc),
-                        'ports': self.scan_ports(recv.psrc),
-                        'vulns': {}
+                print(recv.psrc, recv.hwsrc)
+                self.result.update({
+                    gateway: {
+                        iface: {
+                            recv.psrc: {
+                                'mac': recv.hwsrc,
+                                'vendor': self.get_vendor(recv.hwsrc),
+                                'platform': self.get_platform(recv.psrc),
+                                'ports': self.scan_ports(recv.psrc),
+                                'vulns': {}
+                            }
+                        }
                     }
                 })
-
-            self.result.update({
-                gateway: {
-                    iface: hosts
-                }
-            })
 
     def audit_result(self) -> dict:
         """ Get network audit result.
