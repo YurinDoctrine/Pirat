@@ -63,7 +63,7 @@ class Net:
 
         ifaces = netifaces.interfaces()
         for iface in ifaces:
-            addrs = netifaces.ifaddress(iface)
+            addrs = netifaces.ifaddresses(iface)
 
             if socket.AF_INET in addrs:
                 addrs = addrs[socket.AF_INET][0]
