@@ -44,10 +44,16 @@ class Net:
         0x80: 'windows'
     }
 
-    def get_gateways():
+    macdb = MacLookup()
+    macdb_updated = False
+
+    result = {}
+
+    @staticmethod
+    def get_gateways() -> dict:
         """ Get all network interfaces available on the system.
 
-        :return dict: network interfaces available on the system.
+        :return dict: network interfaces available on the system
         """
 
         gateways = {}
@@ -66,3 +72,107 @@ class Net:
                 })
 
         return gateways
+
+    @staticmethod
+    def scan_ports(host: str, start: int = 0, end: int = 65535) -> dict:
+        """ Scan host for opened ports.
+
+        :param str host: host to scan for opened ports
+        :param int start: first port
+        :param int end: final port
+        :return dict: dictionary of port and service name
+        """
+
+        ports = {}
+
+        for port in range(start, end+1):
+            sock = socket.socket()
+
+            sock.settimeout(0.5)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+            connected = sock.connect_ex((host, port)) == 0
+            sock.close()
+
+            if connected:
+                try:
+                    name = socket.getservbyport(port)
+                except Exception:
+                    name = 'tcpwrapped'
+
+                ports.update({port: name})
+
+        return ports
+
+    def get_vendor(self, mac: str) -> str:
+        """ Get vendor by MAC address.
+
+        :param str mac: MAC address
+        :return str: vendor name
+        """
+
+        if not self.macdb_updated:
+            self.macdb.update_vendors()
+            self.macdb_updated = True
+
+        return self.macdb.lookup(mac)
+
+    def get_platform(self, host: str) -> str:
+        """ Detect platform by host.
+
+        :param str host: host to detect platform by
+        :return str: platform name
+        """
+
+        pack = IP(dst=host) / ICMP()
+        response = sr1(pack, timeout=10, verbose=False)
+
+        if response:
+            if IP in response:
+                ttl = response.getlayer(IP).ttl
+
+                if ttl in self.os_ttl:
+                    return self.os_ttl[ttl]
+
+        return 'unix'
+
+    def start_audit(self, gateway: str, iface: str) -> None:
+        """ Start network audit.
+
+        :param str gateway: gateway to start audit for
+        :param str iface: interface to start audit on
+        :return None: None
+        """
+
+        arp = ARP(pdst=gateway)
+        ether = Ether(dst="ff:ff:ff:ff:ff:ff")
+
+        response = srp(ether / arp, timeout=10, verbose=False)[0]
+
+        if response:
+            hosts = {}
+
+            for _, recv in response:
+                hosts.update({
+                    recv.psrc: {
+                        'mac': recv.psrc.hwsrc,
+                        'vendor': self.get_vendor(recv.psrc.hwsrc),
+                        'platform': self.get_platform(recv.psrc),
+                        'ports': self.scan_ports(recv.psrc),
+                        'vulns': {}
+                    }
+                })
+
+            self.result.update({
+                gateway: {
+                    iface: hosts
+                }
+            })
+
+    def audit_result(self) -> dict:
+        """ Get network audit result.
+
+        :return dict: network audit result
+        """
+
+        return self.result
