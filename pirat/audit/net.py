@@ -53,7 +53,6 @@ class Net:
     macdb_updated = False
 
     result = {}
-    completed = False
 
     @staticmethod
     def get_gateways() -> dict:
@@ -211,15 +210,6 @@ class Net:
                     }
                 }
             })
-
-        completed = True
-
-    def audit_completed(self) -> bool:
-        """ Check if audit completed.
-        
-        """
-
-        return self.completed
 
     def audit_result(self) -> dict:
         """ Get network audit result.
