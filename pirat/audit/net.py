@@ -79,6 +79,27 @@ class Net:
         return gateways
 
     @staticmethod
+    def get_hosts(gateway: str) -> list:
+        """ Get hosts and MACs from gateway.
+
+        :param str gateway: gateway to get hosts and MACs from
+        :return list: hosts and MACs
+        """
+
+        hosts = []
+
+        arp = ARP(pdst=gateway)
+        ether = Ether(dst="ff:ff:ff:ff:ff:ff")
+
+        response = srp(ether / arp, timeout=self.srp_timeout, verbose=False)[0]
+
+        if response:
+            for _, recv in response:
+                hosts.append((recv.psrc, recv.hwsrc))
+
+        return hosts
+
+    @staticmethod
     def get_ports(host: str, start: int = 0, end: int = 65535, tech: str = 'f') -> dict:
         """ Scan host for opened ports.
 
@@ -162,29 +183,34 @@ class Net:
         :return None: None
         """
 
-        arp = ARP(pdst=gateway)
-        ether = Ether(dst="ff:ff:ff:ff:ff:ff")
+        pairs = self.get_hosts(gateway)
 
-        response = srp(ether / arp, timeout=self.srp_timeout, verbose=False)[0]
-
-        if response:
-            hosts = {}
-
-            for _, recv in response:
-                self.result = deep_update(self.result, {
-                    gateway: {
-                        iface: {
-                            recv.psrc: {
-                                'mac': recv.hwsrc,
-                                'vendor': self.get_vendor(recv.hwsrc),
-                                'dns': self.get_dns(recv.psrc),
-                                'platform': self.get_platform(recv.psrc),
-                                'ports': self.get_ports(recv.psrc, end=1000),
-                                'vulns': {}
-                            }
+        for host, mac in pairs:
+            self.result = deep_update(self.result, {
+                gateway: {
+                    iface: {
+                        host: {
+                            'mac': mac,
+                            'vendor': self.get_vendor(mac),
+                            'dns': self.get_dns(host),
+                            'platform': self.get_platform(host),
+                            'ports': {},
+                            'flaws': {}
                         }
                     }
-                })
+                }
+            })
+
+        for host, _ in pairs:
+            self.result = deep_update(self.result, {
+                gateway: {
+                    iface: {
+                        host: {
+                            'ports': self.get_ports(host, end=1000)
+                        }
+                    }
+                }
+            })
 
     def audit_result(self) -> dict:
         """ Get network audit result.
