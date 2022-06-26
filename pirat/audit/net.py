@@ -166,7 +166,7 @@ class Net:
                                 'mac': recv.hwsrc,
                                 'vendor': self.get_vendor(recv.hwsrc),
                                 'platform': self.get_platform(recv.psrc),
-                                'ports': self.scan_ports(recv.psrc),
+                                'ports': self.scan_ports(recv.psrc, end=1000),
                                 'vulns': {}
                             }
                         }
