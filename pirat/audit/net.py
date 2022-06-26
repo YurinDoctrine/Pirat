@@ -78,8 +78,7 @@ class Net:
 
         return gateways
 
-    @staticmethod
-    def get_hosts(gateway: str) -> list:
+    def get_hosts(self, gateway: str) -> list:
         """ Get hosts and MACs from gateway.
 
         :param str gateway: gateway to get hosts and MACs from
