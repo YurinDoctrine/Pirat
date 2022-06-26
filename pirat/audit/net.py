@@ -29,6 +29,7 @@ import netifaces
 
 from scapy.all import *
 from mac_vendor_lookup import MacLookup
+from pydantic.utils import deep_update
 
 
 class Net:
@@ -103,7 +104,7 @@ class Net:
                 try:
                     name = socket.getservbyport(port)
                 except Exception:
-                    name = 'tcpwrapped'
+                    name = 'unidentified'
 
                 ports.update({port: name})
 
@@ -120,7 +121,10 @@ class Net:
             self.macdb.update_vendors()
             self.macdb_updated = True
 
-        return self.macdb.lookup(mac)
+        try:
+            return self.macdb.lookup(mac)
+        except Exception:
+            return 'unidentified'
 
     def get_platform(self, host: str) -> str:
         """ Detect platform by host.
@@ -159,14 +163,15 @@ class Net:
 
             for _, recv in response:
                 print(recv.psrc, recv.hwsrc)
-                self.result.update({
+
+                self.result = deep_update(self.result, {
                     gateway: {
                         iface: {
                             recv.psrc: {
                                 'mac': recv.hwsrc,
                                 'vendor': self.get_vendor(recv.hwsrc),
                                 'platform': self.get_platform(recv.psrc),
-                                'ports': self.scan_ports(recv.psrc, end=1000),
+                                'ports': self.scan_ports(recv.psrc, end=1000) if recv.psrc != '192.168.2.1' else {}, # debug
                                 'vulns': {}
                             }
                         }
