@@ -79,7 +79,7 @@ class Net:
         return gateways
 
     @staticmethod
-    def scan_ports(host: str, start: int = 0, end: int = 65535, tech: str = 'f') -> dict:
+    def get_ports(host: str, start: int = 0, end: int = 65535, tech: str = 'f') -> dict:
         """ Scan host for opened ports.
 
         :param str host: host to scan for opened ports
@@ -126,6 +126,15 @@ class Net:
         except Exception:
             return 'unidentified'
 
+    def get_dns(self, host: str) -> str:
+        """ Get local DNS name by host.
+
+        :param str host: host to get local DNS name by
+        :return str: local DNS name
+        """
+
+        return socket.gethostbyaddr(host)[0]
+
     def get_platform(self, host: str) -> str:
         """ Detect platform by host.
 
@@ -162,16 +171,15 @@ class Net:
             hosts = {}
 
             for _, recv in response:
-                print(recv.psrc, recv.hwsrc)
-
                 self.result = deep_update(self.result, {
                     gateway: {
                         iface: {
                             recv.psrc: {
                                 'mac': recv.hwsrc,
                                 'vendor': self.get_vendor(recv.hwsrc),
+                                'dns': self.get_dns(recv.psrc),
                                 'platform': self.get_platform(recv.psrc),
-                                'ports': self.scan_ports(recv.psrc, end=1000) if recv.psrc != '192.168.2.1' else {}, # debug
+                                'ports': self.get_ports(recv.psrc, end=1000),
                                 'vulns': {}
                             }
                         }
